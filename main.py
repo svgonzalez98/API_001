@@ -26,3 +26,6 @@ async def phase_change_diagram(pressure: float = Query(..., description="Pressur
         "specific_volume_liquid": round(v_liq, 6),
         "specific_volume_vapor": round(v_vap, 6),
     })
+@app.get("/")
+def root():
+    return {"status": "ok", "message": "API funcionando 🚀"}
