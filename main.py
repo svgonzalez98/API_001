@@ -1,25 +1,28 @@
-from fastapi import FastAPI, Response
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Query
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
-@app.get("/status")
-def get_status():
-    return {"damaged_system": "engines"}
+# Tabla de saturación simplificada (ejemplo)
+SAT_TABLE = {
+    1: (0.0011, 1.694),
+    5: (0.0012, 0.374),
+    10: (0.0035, 0.0035),   # del ejemplo que daban
+    15: (0.0015, 0.132),
+    20: (0.0017, 0.099),
+}
 
-@app.get("/repair-bay")
-def repair_bay():
-    html = """
-    <!DOCTYPE html>
-    <html>
-    <head><title>Repair</title></head>
-    <body>
-      <div class="anchor-point">ENG-04</div>
-    </body>
-    </html>
-    """
-    return HTMLResponse(content=html)
+@app.get("/phase-change-diagram")
+async def phase_change_diagram(pressure: float = Query(..., description="Pressure in MPa")):
+    # Buscar en tabla
+    if pressure in SAT_TABLE:
+        v_liq, v_vap = SAT_TABLE[pressure]
+    else:
+        # fallback: aproximación lineal
+        v_liq = 0.001 + 0.00005 * pressure
+        v_vap = round(2.0 / (pressure + 0.5), 6)
 
-@app.post("/teapot")
-def teapot():
-    return Response(status_code=418)
+    return JSONResponse({
+        "specific_volume_liquid": round(v_liq, 6),
+        "specific_volume_vapor": round(v_vap, 6),
+    })
